@@ -49,3 +49,27 @@ jobs:
               rm -f app/src/main/assets/fonts/vazirmatn.woff2
             fi
           done
+          ls -la app/src/main/assets/fonts || true
+
+      - name: Accept Android licenses
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Build debug APK
+        working-directory: project
+        run: gradle assembleDebug --stacktrace
+
+      - name: Name the APK
+        run: cp project/app/build/outputs/apk/debug/app-debug.apk SahmLedger.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SahmLedger-apk
+          path: SahmLedger.apk
+
+      - name: Publish to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: دفتر سهام v${{ github.run_number }}
+          files: SahmLedger.apk
