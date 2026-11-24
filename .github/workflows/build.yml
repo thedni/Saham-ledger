@@ -1,0 +1,51 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ['*.zip']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unzip the project
+        run: |
+          ZIP=$(ls *.zip 2>/dev/null | head -1)
+          if [ -z "$ZIP" ]; then echo "No .zip file found in the repository root"; exit 1; fi
+          echo "Using $ZIP"
+          mkdir project
+          unzip -q "$ZIP" -d project
+          ls -la project
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Download Persian font (falls back to system font if it fails)
+        working-directory: project
+        run: |
+          mkdir -p app/src/main/assets/fonts
+          for url in \
+            "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/fonts/webfonts/Vazirmatn%5Bwght%5D.woff2" \
+            "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/fonts/webfonts/Vazirmatn-Regular.woff2"; do
+            if curl -fsSL "$url" -o app/src/main/assets/fonts/vazirmatn.woff2 && [ -s app/src/main/assets/fonts/vazirmatn.woff2 ]; then
+              echo "font ok: $url"; break
+            else
+              rm -f app/src/main/assets/fonts/vazirmatn.woff2
+            fi
+          done
